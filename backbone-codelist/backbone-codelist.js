@@ -1,9 +1,6 @@
 ;(function() {
 
     var root = this;
-    var codelist_path = './assets/codelists/' + name.toLowerCase() + '.json';   //codelist path
-
-
     var Codelist = {};
 
         Codelist.Model  = Backbone.Model.extend({
@@ -53,6 +50,8 @@
                     def.resolve(codelist);
                     return def;
                 }
+
+                var codelist_path = './assets/codelists/' + name + '.json';
 
                 var that = this;
                 $.get(codelist_path, function(data) {
