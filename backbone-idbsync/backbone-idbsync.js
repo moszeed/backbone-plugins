@@ -25,7 +25,7 @@
 
         DB = new IDBStore({
             storeName   : model.storeName,
-            storePrefix : 'clAudio-',
+            storePrefix : 'idbsync-',
             onError     : function(error)   { deferred.reject(error);   },
             onStoreReady: function()        { deferred.resolve();       }
         });
