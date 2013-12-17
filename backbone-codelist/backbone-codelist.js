@@ -51,10 +51,10 @@
                     return def;
                 }
 
-                var codelist_path = './assets/codelists/' + name + '.json';
+                var path = './assets/codelists/' + name + '.json';
 
                 var that = this;
-                $.get(codelist_path, function(data) {
+                $.get(path, function(data) {
 
                     codelist = new Codelist.Model();
                     codelist.set(data);
