@@ -48,7 +48,17 @@
     }
 
 
-    function _read(model, opts) {
+    function _read(instance, opts) {
+
+        if (instance instanceof Backbone.Model) {
+            _readModel(instance, opts);
+            return true;
+        }
+
+        _readCollection(instance, opts);
+    }
+
+    function _readModel(model, opts) {
 
         if (model.get('id') === null) {
             throw new Error('no id given');
@@ -58,6 +68,36 @@
                 function(items) { _syncModel(model, items, opts);   },
                 function()      { _onerror('fail to read', model);  });
     }
+
+    function _readCollection(collection, opts) {
+
+        opts        = opts || {};
+        opts.filter = opts.filter || null;
+
+        var items  = [];
+        var onItem = function(item) {
+
+            if (opts.filter === null) {
+                items.push(item);
+                return true;
+            }
+
+            _.each(opts.filter, function(value, key) {
+                if (item[key]) {
+                    if (item[key] == value) {
+                        items.push(item);
+                    }
+                }
+            });
+        };
+
+        DB.iterate(onItem, {
+            onEnd : function() {
+                _syncModel(collection, items, opts);
+            }
+        });
+    }
+
 
     function _create(model, opts) {
 
