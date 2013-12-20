@@ -6,8 +6,8 @@
 ;(function() {
 
 
-    var DB = null;
-
+    var DB = {};
+    var promises = {};
 
     /**
      * initialize idb store, returns promise
@@ -18,19 +18,32 @@
 
         var deferred = new jQuery.Deferred();
 
-        if (DB !== null) {
+        if (DB[model.storeName] !== void 0) {
             deferred.resolve();
             return deferred;
         }
 
-        DB = new IDBStore({
+        DB[model.storeName] = new IDBStore({
             storeName   : model.storeName,
-            storePrefix : 'idbsync-',
+            storePrefix : 'idbwrapper-',
             onError     : function(error)   { deferred.reject(error);   },
             onStoreReady: function()        { deferred.resolve();       }
         });
 
         return deferred;
+    }
+
+
+    function _cleanData(data) {
+
+        var returnData = {};
+        _.each(data, function(value, key) {
+            if (value !== null) {
+                returnData[key] = value;
+            }
+        });
+
+        return returnData;
     }
 
     function _syncModel(model, items, opts) {
@@ -64,7 +77,7 @@
             throw new Error('no id given');
         }
 
-        DB.get(model.get('id'),
+        DB[model.storeName].get(model.get('id'),
                 function(items) { _syncModel(model, items, opts);   },
                 function()      { _onerror('fail to read', model);  });
     }
@@ -91,7 +104,7 @@
             });
         };
 
-        DB.iterate(onItem, {
+        DB[collection.storeName].iterate(onItem, {
             onEnd : function() {
                 _syncModel(collection, items, opts);
             }
@@ -101,9 +114,10 @@
 
     function _create(model, opts) {
 
-        DB.put(model.attributes,
-                function(id)    { _syncModel(model, {id:id}, opts); },
-                function()      { _onerror('fail to create', model);  });
+        DB[model.storeName]
+            .put(_cleanData(model.attributes),
+                function(id)    { _syncModel(model, {id:id}, opts);     },
+                function()      { _onerror('fail to create', model);    });
     }
 
     function _update(model, opts) {
@@ -112,7 +126,7 @@
             throw new Error('no id given');
         }
 
-        DB.put(model.attributes,
+        DB[model.storeName].put(model.attributes,
                 function(items) { _syncModel(model, items, opts);       },
                 function()      { _onerror('fail to update', model);    });
     }
@@ -123,7 +137,7 @@
             throw new Error('no id given');
         }
 
-        DB.remove(model.get('id'),
+        DB[model.storeName].remove(model.get('id'),
                 function(items) { _syncModel(model, items, opts);       },
                 function()      { _onerror('fail to delete', model);    });
     }
@@ -139,9 +153,9 @@
         options.success = options.success   || function() {};
         options.error   = options.error     || function() {};
 
-        //initialize store
-        _initStore(model)
-            .fail(function() { throw new Error('fail to initialize'); })
+        promises[model.storeName] = promises[model.storeName] || _initStore(model);
+        promises[model.storeName]
+            .fail(function() {})
             .done(function() {
 
                 switch (method) {
